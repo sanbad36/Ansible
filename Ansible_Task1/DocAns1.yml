@@ -1,0 +1,73 @@
+- hosts: web
+  vars_prompt:
+  - name: dnsIP
+    prompt: "Enter ur DNS IP"  
+    private: no
+  tasks: 
+  - name: Configuring DNS Server
+    template: 
+      src: dns.conf.j2
+      dest: /etc/resolv.conf
+    register: x
+    ignore_errors: yes
+  - debug: 
+      var: x.failed 
+          
+  - name: Adding Docker repository
+    yum_repository:
+      name: docker 
+      description: Docker repo
+      baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+      gpgcheck: no
+
+  - name: Installing Docker
+    package:
+      name: "docker-ce-18.06.3.ce-3.el7.x86_64"     
+      state: present
+  
+  - name: Installing Python3
+    package:
+      name: "python3"
+      state: present
+  
+  - name: Creating the Workspace
+    file:
+      path: /root/Ans_task1
+      state: directory
+    
+      
+  - name: Copying the HTML page
+    copy:
+      src: "web1435.html"
+      dest: "/root/Ans_task1/"
+    ignore_errors: yes
+
+  - name: Starting Docker Services
+    service:
+      name: "docker"
+      state: started
+
+  - name: Enabling service Docker
+    service:
+      name: docker
+      enabled: yes
+       
+  - pip:
+      name: docker
+
+  - name: pulling an image
+    docker_image:
+      name: httpd
+      source: pull
+
+  - name: Starting a container 
+    docker_container:
+      name: WebServer
+      image: httpd
+      state: started
+      ports:
+      - "1456:80"
+      volumes:
+      - /root/Ans_task1/:/usr/local/apache2/htdocs/
+  - debug: 
+      msg: "Go to port number 1456 " 
